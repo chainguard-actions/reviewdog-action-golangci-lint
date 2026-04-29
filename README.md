@@ -1,5 +1,7 @@
 # reviewdog/action-golangci-lint
 
+Run golangci-lint with reviewdog
+
 Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/reviewdog/action-golangci-lint](https://github.com/reviewdog/action-golangci-lint).
 
 ## Versions
