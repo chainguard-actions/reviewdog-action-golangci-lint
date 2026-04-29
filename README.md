@@ -1,6 +1,12 @@
 # reviewdog/action-golangci-lint
 
-Hardened GitHub Action by [Chainguard](https://www.chainguard.dev).
+Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/reviewdog/action-golangci-lint](https://github.com/reviewdog/action-golangci-lint).
+
+## Versions
+
+| Version | Tag | Upstream commit |
+|---------|-----|-----------------|
+| v2.10.0 | [`v2.10.0`](https://github.com/chainguard-actions/action-golangci-lint/tree/v2.10.0) | — |
 
 ## Privacy
 
