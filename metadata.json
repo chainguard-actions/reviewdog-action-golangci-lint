@@ -2,5 +2,6 @@
   "owner": "reviewdog",
   "name": "action-golangci-lint",
   "visibility": "internal",
-  "description": "Run golangci-lint with reviewdog"
+  "description": "Run golangci-lint with reviewdog",
+  "block_publish": false
 }
