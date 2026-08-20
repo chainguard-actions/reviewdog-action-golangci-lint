@@ -1,0 +1,179 @@
+name: reviewdog
+on: [pull_request]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  # NOTE: golangci-lint doesn't report multiple errors on the same line from
+  # different linters and just report one of the errors?
+
+  golangci-lint:
+    name: runner / golangci-lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        golangci-lint-version: ["v1", "v2"]
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: golangci-lint
+        uses: ./
+        with:
+          github_token: ${{ secrets.github_token }}
+          level: warning
+          golangci_lint_version: ${{ matrix.golangci-lint-version == 'v1' && 'v1.64.8' || 'latest' }}
+          golangci_lint_flags: "--config=.github/.golangci.${{ matrix.golangci-lint-version }}.yml ./testdata"
+
+  golangci-lint-platform:
+    name: runner / golangci-lint-platform
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+        golangci-lint-version: ["v1", "v2"]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: golangci-lint (platform)
+        uses: ./
+        with:
+          github_token: ${{ secrets.github_token }}
+          tool_name: golangci-lint-${{ matrix.platform }}
+          level: warning
+          golangci_lint_version: ${{ matrix.golangci-lint-version == 'v1' && 'v1.64.8' || 'latest' }}
+          golangci_lint_flags: "--config=.github/.golangci.${{ matrix.golangci-lint-version }}.yml ./testdata --timeout 10m"
+
+  golangci-lint-github-pr-review:
+    name: runner / golangci-lint (github-pr-review)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: golangci-lint w/ github-pr-review
+        uses: ./
+        with:
+          golangci_lint_flags: "./testdata"
+          tool_name: "golangci-lint-github-pr-review"
+          reporter: "github-pr-review"
+
+  golangci-lint-github-check:
+    name: runner / golangci-lint (github-check)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: golangci-lint w/ github-check
+        uses: ./
+        with:
+          golangci_lint_flags: "./testdata"
+          tool_name: "golangci-lint-github-check"
+          level: warning
+          reporter: "github-check"
+
+  golangci-lint-workdir:
+    name: runner / golangci-lint (workdir)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: golangci-lint (workdir)
+        uses: ./
+        with:
+          workdir: "./testdata"
+          golangci_lint_flags: ""
+          tool_name: "golangci-lint-workdir"
+          level: warning
+          reporter: "github-check"
+          filter_mode: "file"
+
+  golangci-lint-all-in-one:
+    name: runner / golangci-lint-all-in-one
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: golangci-lint (All-In-One config)
+        uses: ./
+        with:
+          github_token: ${{ secrets.github_token }}
+          tool_name: "golangci-lint-all-in-one"
+          level: warning
+          golangci_lint_flags: "--default all ./testdata"
+
+  govet:
+    name: runner / govet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: govet
+        uses: ./
+        with:
+          github_token: ${{ secrets.github_token }}
+          golangci_lint_flags: "--default none -E govet ./testdata"
+          tool_name: govet
+
+  staticcheck:
+    name: runner / staticcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: staticcheck
+        uses: ./
+        with:
+          github_token: ${{ secrets.github_token }}
+          golangci_lint_flags: "--default none -E staticcheck ./testdata"
+          tool_name: staticcheck
+
+  errcheck:
+    name: runner / errcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: errcheck
+        uses: ./
+        with:
+          github_token: ${{ secrets.github_token }}
+          golangci_lint_flags: "--default none -E errcheck ./testdata"
+          tool_name: errcheck
+          level: warning
+
+  misspell:
+    name: runner / misspell
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: misspell
+        uses: ./
+        with:
+          github_token: ${{ secrets.github_token }}
+          golangci_lint_flags: "--default none -E misspell ./testdata"
+          tool_name: misspell
+          level: info
+
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: reviewdog/action-actionlint@0d952c597ef8459f634d7145b0b044a9699e5e43 # v1.71.0
+
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version-file: ".node-version"
+          cache: "npm"
+      - run: npm ci
+      - uses: reviewdog/action-eslint@556a3fdaf8b4201d4d74d406013386aa4f7dab96 # v1.34.0
+        with:
+          reporter: github-pr-review
+          level: warning
+          eslint_flags: "src/**/*.ts"

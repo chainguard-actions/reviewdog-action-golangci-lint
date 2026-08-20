@@ -1,0 +1,21 @@
+# https://golangci-lint.run/usage/configuration/
+linters-settings:
+  govet:
+    enable:
+      - shadow
+  misspell:
+    locale: US
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - misspell
+    - errcheck
+
+issues:
+  exclude-use-default: false
+  max-same-issues: 0

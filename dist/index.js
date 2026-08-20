@@ -33547,22 +33547,9 @@ async function installGoVersion(info$1, auth) {
         extPath = path.join(extPath, "go");
     }
     info("Adding to the cache ...");
-    let installPath = extPath;
-    try {
-        const cachedDir = await cacheDir(extPath, "go", makeSemver(info$1.resolvedVersion));
-        info(`Successfully cached go to ${cachedDir}`);
-        // Verify the binary exists in the cached directory; fall back to extracted path if not
-        const cachedBin = path.join(cachedDir, "bin", "go");
-        if (fs__default.existsSync(cachedBin)) {
-            installPath = cachedDir;
-        } else {
-            info(`[warning] Go binary not found in cached directory ${cachedDir}, using extracted path ${extPath}`);
-        }
-    }
-    catch (cacheErr) {
-        info(`[warning] Failed to cache Go installation: ${cacheErr}. Using extracted path ${extPath}`);
-    }
-    return installPath;
+    const cachedDir = await cacheDir(extPath, "go", makeSemver(info$1.resolvedVersion));
+    info(`Successfully cached go to ${cachedDir}`);
+    return cachedDir;
 }
 async function extractGoArchive(archivePath) {
     const platform = os__default.platform();
@@ -33677,7 +33664,7 @@ function parseGoVersionFile(versionFilePath) {
 
 // this file comes from https://github.com/actions/setup-go/blob/b22fbbc2921299758641fab08929b4ac52b32923/src/main.ts
 // see LICENSE for its license
-const defaultGoVersion = "1.23";
+const defaultGoVersion = "1.x";
 async function run$1(version, versionFilePath) {
     try {
         const versionSpec = resolveVersionInput(version, versionFilePath);
@@ -33685,47 +33672,11 @@ async function run$1(version, versionFilePath) {
             return;
         }
         info(`Setup go version spec ${versionSpec}`);
-        // If no explicit version was requested (using default), check if go is already available
-        const explicitVersion = version || versionFilePath;
-        if (!explicitVersion) {
-            const existingGo = await which("go");
-            if (existingGo) {
-                info(`Found existing go installation at ${existingGo}, skipping installation`);
-                try {
-                    const goVersion = (cp__default.execSync(`${existingGo} version`) || "").toString();
-                    info(goVersion);
-                }
-                catch (verErr) {
-                    info(`[warning] Could not determine go version: ${verErr}`);
-                }
-                return;
-            }
-        }
-        let installDir = "";
         if (versionSpec) {
             const token = getInput("token");
             const auth = !token || isGhes$1() ? undefined : `token ${token}`;
             const checkLatest = false;
-            try {
-                installDir = await getGo(versionSpec, checkLatest, auth);
-            }
-            catch (installErr) {
-                // If installation failed, check if go is already available as a fallback
-                const fallbackGo = await which("go");
-                if (fallbackGo) {
-                    info(`[warning] Go installation failed: ${installErr}`);
-                    info(`Falling back to existing go installation at ${fallbackGo}`);
-                    try {
-                        const goVersion = (cp__default.execSync(`${fallbackGo} version`) || "").toString();
-                        info(goVersion);
-                    }
-                    catch (verErr) {
-                        info(`[warning] Could not determine go version: ${verErr}`);
-                    }
-                    return;
-                }
-                throw installErr;
-            }
+            const installDir = await getGo(versionSpec, checkLatest, auth);
             exportVariable("GOROOT", installDir);
             addPath(path__default.join(installDir, "bin"));
             info("Added go to the path");
@@ -33734,41 +33685,16 @@ async function run$1(version, versionFilePath) {
             info(`Successfully setup go version ${versionSpec}`);
         }
         // output the version actually being used
-        let goPath = await which("go");
-        if (!goPath && installDir) {
-            // which() may fail if the executable bit is not set in the cache;
-            // ensure the go binary is executable and fall back to the known install location.
-            const goBin = path__default.join(installDir, "bin", "go");
-            let chmodOk = false;
-            try {
-                fs__default.chmodSync(goBin, 0o755);
-                chmodOk = true;
-            }
-            catch (chmodErr) {
-                info(`[warning] Could not chmod go binary: ${chmodErr}`);
-            }
-            if (chmodOk && fs__default.existsSync(goBin)) {
-                goPath = goBin;
-                addPath(path__default.join(installDir, "bin"));
-            }
-        }
-        if (goPath) {
-            try {
-                const goVersion = (cp__default.execSync(`${goPath} version`) || "").toString();
-                info(goVersion);
-                startGroup("go env");
-                const goEnv = (cp__default.execSync(`${goPath} env`) || "").toString();
-                info(goEnv);
-                endGroup();
-            }
-            catch (verErr) {
-                info(`[warning] Could not determine go version: ${verErr}`);
-            }
-        }
+        const goPath = await which("go");
+        const goVersion = (cp__default.execSync(`${goPath} version`) || "").toString();
+        info(goVersion);
+        startGroup("go env");
+        const goEnv = (cp__default.execSync(`${goPath} env`) || "").toString();
+        info(goEnv);
+        endGroup();
     }
     catch (error) {
         setFailed(`${error}`);
-        throw error;
     }
 }
 async function addBinToPath() {
@@ -77289,7 +77215,6 @@ async function hashFiles(...files) {
 
 async function run() {
     const runnerTmpdir = process.env["RUNNER_TEMP"] || os.tmpdir();
-    await promises.mkdir(runnerTmpdir, { recursive: true });
     const tmpdir = await promises.mkdtemp(path.join(runnerTmpdir, "reviewdog-"));
     try {
         const reviewdogVersion = getInput("reviewdog_version") || "latest";

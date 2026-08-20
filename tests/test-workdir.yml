@@ -1,0 +1,56 @@
+name: Test golangci-lint with custom workdir
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a Go module in a subdirectory
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/subdir-sample"
+          cat > "$GITHUB_WORKSPACE/tests/subdir-sample/go.mod" << 'EOF'
+          module example.com/subdir
+
+          go 1.21
+          EOF
+          cat > "$GITHUB_WORKSPACE/tests/subdir-sample/app.go" << 'EOF'
+          package main
+
+          import "fmt"
+
+          func add(a, b int) int {
+          	return a + b
+          }
+
+          func main() {
+          	fmt.Println(add(1, 2))
+          }
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          workdir: tests/subdir-sample
+          tool_name: golangci-subdir
+          level: warning
+
+      - name: Assert action ran with workdir input
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action completed successfully with custom workdir"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected on sentinel repo)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

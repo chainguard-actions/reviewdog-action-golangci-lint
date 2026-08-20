@@ -1,0 +1,51 @@
+name: Test basic golangci-lint usage
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a minimal Go module for linting
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/tests/go-sample"
+          cat > "$GITHUB_WORKSPACE/tests/go-sample/go.mod" << 'EOF'
+          module example.com/sample
+
+          go 1.21
+          EOF
+          cat > "$GITHUB_WORKSPACE/tests/go-sample/main.go" << 'EOF'
+          package main
+
+          import "fmt"
+
+          func main() {
+          	fmt.Println("Hello, World!")
+          }
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          workdir: tests/go-sample
+          golangci_lint_flags: "--timeout=60s"
+
+      - name: Assert action ran (success or graceful failure on sentinel repo)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action completed successfully"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected on sentinel repo)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

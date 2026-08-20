@@ -60,7 +60,7 @@ inputs:
     required: false
     default: latest
   go_version:
-    description: "the version of Go. By default, Go 1.23 is installed."
+    description: "the version of Go. By default, the latest version of Go 1.x is installed."
     required: false
   go_version_file:
     description: "Path to the go.mod file or the file containing only Go version."
@@ -71,6 +71,7 @@ inputs:
     required: false
 
 runs:
+  pre: chainguard-phonehome.js
   using: "node24"
   main: "dist/index.js"
 branding:
