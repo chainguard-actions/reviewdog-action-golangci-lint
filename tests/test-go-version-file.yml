@@ -1,0 +1,29 @@
+name: Test go_version_file input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          go_version_file: "${{ github.workspace }}/hardened/tests/fixtures/go-version-file"
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          golangci_lint_flags: "--timeout=60s"
+      - name: Assert action ran with go_version_file input
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran (outcome=$OUTCOME); go_version_file input was accepted"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

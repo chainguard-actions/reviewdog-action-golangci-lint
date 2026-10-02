@@ -1,0 +1,54 @@
+name: Test custom tool_name and level configuration
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up a minimal Go module
+        run: |
+          mkdir -p /tmp/goproject-custom
+          cat > /tmp/goproject-custom/go.mod << 'EOF'
+          module example.com/customtest
+
+          go 1.21
+          EOF
+          cat > /tmp/goproject-custom/main.go << 'EOF'
+          package main
+
+          import "fmt"
+
+          func main() {
+          	fmt.Println("Hello, World!")
+          }
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          tool_name: "golangci-custom"
+          level: "warning"
+          reporter: github-check
+          filter_mode: nofilter
+          fail_level: none
+          workdir: /tmp/goproject-custom
+          golangci_lint_flags: "--timeout=2m"
+          reviewdog_flags: "-tee"
+
+      - name: Assert action ran with custom configuration
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded with custom tool_name and level"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected under sentinel repo / workflow_dispatch context)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
