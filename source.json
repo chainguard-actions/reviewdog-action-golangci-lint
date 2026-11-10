@@ -4,8 +4,13 @@
   "version": "v2.10.1",
   "commit_sha": "db65103266f304d8ac929ad6c0cd02d14f6837ba",
   "url": "https://github.com/reviewdog/action-golangci-lint",
-  "policy_sha": "d636be7e43ef829af6e853da6b3c7566db9f72fe",
+  "policy_sha": "374911c4be584df24e6da57af2d990570ef0f859",
   "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
   "test_agent_version": "2",
-  "harden_agent_version": "2"
+  "harden_agent_version": "2",
+  "dist_artifact": {
+    "gcs_uri": "gs://patch-actions-node-artifacts/dist-artifacts/reviewdog/action-golangci-lint/v2.10.1/sha256-c03a4d2f5453f4d08c6dd9100d682946832d06fc4c0cf37e135920cec423fc38.tar.gz",
+    "sha256": "c03a4d2f5453f4d08c6dd9100d682946832d06fc4c0cf37e135920cec423fc38",
+    "size_bytes": 1495631
+  }
 }
